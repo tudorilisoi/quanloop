@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { Calculator, RotateCcw, TrendingUp } from 'lucide-react'
 
@@ -23,6 +23,11 @@ import {
   type TimeUnit,
 } from '@/lib/compound-interest'
 
+const STORAGE_KEY = 'quanloop:compound-interest-form'
+
+/** How long the form has to stay untouched before it is saved. */
+const SAVE_DEBOUNCE_MS = 500
+
 const DEFAULT_CUTOFF_DAYS = '15'
 
 const TIME_UNIT_OPTIONS: { value: TimeUnit; label: string }[] = [
@@ -44,14 +49,14 @@ function formatUnitValue(value: number): string {
 
 interface FormValues {
   principal: string
-  monthlyInterest: string
+  yearlyInterest: string
   daysPassed: string
   cutoffDays: string
 }
 
 const INITIAL_VALUES: FormValues = {
   principal: '',
-  monthlyInterest: '',
+  yearlyInterest: '',
   daysPassed: '',
   cutoffDays: DEFAULT_CUTOFF_DAYS,
 }
@@ -80,26 +85,31 @@ function calculateFromValues(
   unit: TimeUnit,
 ): CompoundInterestResult | null {
   const principal = parseNumber(values.principal)
-  const monthlyInterest = parseNumber(values.monthlyInterest)
+  const yearlyInterest = parseNumber(values.yearlyInterest)
   const timePassed = parseNumber(values.daysPassed)
   const cutoffDays = parseNumber(values.cutoffDays)
 
   if (
     principal === null ||
-    monthlyInterest === null ||
+    yearlyInterest === null ||
     timePassed === null ||
     cutoffDays === null
   ) {
     return null
   }
 
-  if (principal < 0 || monthlyInterest < 0 || timePassed < 0 || cutoffDays < 1) {
+  if (
+    principal < 0 ||
+    yearlyInterest < 0 ||
+    timePassed < 0 ||
+    cutoffDays < 1
+  ) {
     return null
   }
 
   return calculateCompoundInterest({
     principal,
-    monthlyInterest,
+    yearlyInterest,
     daysPassed: toDays(timePassed, unit),
     cutoffDays,
   })
@@ -166,6 +176,40 @@ function App() {
     values: FormValues
     text: string
   } | null>(null)
+
+  // Restore the form saved during the previous visit.
+  useEffect(() => {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (!stored) {
+      return
+    }
+
+    try {
+      const saved = JSON.parse(stored) as {
+        values: FormValues
+        timeUnit: TimeUnit
+      }
+      // Merge over the defaults so older payloads (e.g. one saved before the
+      // monthly → yearly rate switch) cannot leave fields undefined.
+      setValues({ ...INITIAL_VALUES, ...saved.values })
+      setTimeUnit(saved.timeUnit)
+    } catch {
+      // Unreadable state: keep the defaults.
+    }
+  }, [])
+
+  // Debounced save: every edit restarts the timer, so the form is only written
+  // once the inputs have been left alone for `SAVE_DEBOUNCE_MS`.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ values, timeUnit }),
+      )
+    }, SAVE_DEBOUNCE_MS)
+
+    return () => clearTimeout(timer)
+  }, [values, timeUnit])
 
   // Recalculates whenever a form input changes. `balanceEdit` is not a
   // dependency: editing the balance never triggers a recalculation.
@@ -240,14 +284,14 @@ function App() {
               className="size-3.5 text-emerald-400"
               aria-hidden="true"
             />
-            Monthly rate, periodic compounding
+            Yearly rate, periodic compounding
           </div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight">
             Compound interest calculator
           </h1>
           <p className="text-sm text-muted-foreground">
-            The monthly rate accrues daily and is capitalized into the balance
-            at each cutoff.
+            The yearly rate accrues daily and is capitalized into the balance at
+            each cutoff.
           </p>
         </header>
 
@@ -283,22 +327,22 @@ function App() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="monthlyInterest">Monthly interest (%)</Label>
+                  <Label htmlFor="yearlyInterest">Yearly interest (%)</Label>
                   <Input
-                    id="monthlyInterest"
-                    name="monthlyInterest"
+                    id="yearlyInterest"
+                    name="yearlyInterest"
                     type="number"
                     inputMode="decimal"
                     min="0"
                     step="0.01"
                     required
-                    placeholder="2"
-                    value={values.monthlyInterest}
-                    onChange={handleChange('monthlyInterest')}
+                    placeholder="24"
+                    value={values.yearlyInterest}
+                    onChange={handleChange('yearlyInterest')}
                     className="h-9"
                   />
                   <p className="text-xs text-muted-foreground">
-                    2 means 2% per month, accrued daily.
+                    24 means 24% per year, accrued daily over a 360-day year.
                   </p>
                 </div>
 

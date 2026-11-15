@@ -21,8 +21,8 @@ export function toDays(value: number, unit: TimeUnit): number {
 
 export interface CompoundInterestInput {
   principal: number
-  /** Monthly interest rate, in percent (for example 2 means 2% per month). */
-  monthlyInterest: number
+  /** Yearly interest rate, in percent (for example 24 means 24% per year). */
+  yearlyInterest: number
   daysPassed: number
   /** Number of days between two compounding events. */
   cutoffDays: number
@@ -49,22 +49,22 @@ export interface CompoundInterestResult {
 }
 
 /**
- * Interest accrues every day at a pro-rata monthly rate (monthly interest
- * spread over {@link DAYS_PER_MONTH} days) and is capitalized into the balance
- * every `cutoffDays` days.
+ * Interest accrues every day at a pro-rata yearly rate (yearly interest spread
+ * over {@link DAYS_PER_YEAR} days) and is capitalized into the balance every
+ * `cutoffDays` days.
  *
  * One cutoff cycle therefore grows the balance by
- * `monthlyInterest * cutoffDays / DAYS_PER_MONTH` percent.
+ * `yearlyInterest * cutoffDays / DAYS_PER_YEAR` percent.
  *
  * Pure function: no I/O, no mutation, deterministic output for given input.
  */
 export function calculateCompoundInterest(
   input: CompoundInterestInput,
 ): CompoundInterestResult {
-  const { principal, monthlyInterest, daysPassed, cutoffDays } = input
+  const { principal, yearlyInterest, daysPassed, cutoffDays } = input
 
   if (
-    ![principal, monthlyInterest, daysPassed, cutoffDays].every((value) =>
+    ![principal, yearlyInterest, daysPassed, cutoffDays].every((value) =>
       Number.isFinite(value),
     )
   ) {
@@ -73,9 +73,9 @@ export function calculateCompoundInterest(
     )
   }
 
-  if (principal < 0 || monthlyInterest < 0 || daysPassed < 0) {
+  if (principal < 0 || yearlyInterest < 0 || daysPassed < 0) {
     throw new RangeError(
-      'calculateCompoundInterest: principal, monthlyInterest and daysPassed must not be negative',
+      'calculateCompoundInterest: principal, yearlyInterest and daysPassed must not be negative',
     )
   }
 
@@ -85,8 +85,8 @@ export function calculateCompoundInterest(
     )
   }
 
-  const monthlyRate = monthlyInterest / 100
-  const dailyRate = monthlyRate / DAYS_PER_MONTH
+  const yearlyRate = yearlyInterest / 100
+  const dailyRate = yearlyRate / DAYS_PER_YEAR
   const cycles = Math.floor(daysPassed / cutoffDays)
   const daysSinceLastCycle = daysPassed % cutoffDays
 

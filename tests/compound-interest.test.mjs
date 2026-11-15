@@ -15,39 +15,39 @@ const close = (actual, expected, message) =>
     `${message}: ${actual} !== ${expected}`,
   )
 
-test('uses a 30-day month convention', () => {
+test('uses a 360-day year convention', () => {
   assert.equal(DAYS_PER_MONTH, 30)
   assert.equal(DAYS_PER_YEAR, 360)
   assert.deepEqual(DAYS_PER_UNIT, { days: 1, months: 30, years: 360 })
 
   const result = calculateCompoundInterest({
     principal: 1000,
-    monthlyInterest: 2,
-    daysPassed: 30,
-    cutoffDays: 30,
+    yearlyInterest: 24,
+    daysPassed: 360,
+    cutoffDays: 360,
   })
 
-  close(result.balance, 1020, 'one month at 2%')
-  close(result.interest, 20, 'one month of interest')
+  close(result.balance, 1240, 'one year at 24%')
+  close(result.interest, 240, 'one year of interest')
 })
 
-test('a 15-day cutoff compounds half of the monthly rate', () => {
+test('a 15-day cutoff compounds 1/24 of the yearly rate', () => {
   const result = calculateCompoundInterest({
     principal: 1000,
-    monthlyInterest: 2,
+    yearlyInterest: 24,
     daysPassed: 15,
     cutoffDays: 15,
   })
 
   assert.equal(result.cycles, 1)
-  close(result.balance, 1010, 'half month at 2%')
+  close(result.balance, 1010, '15 days at 24%/year')
   close(result.compoundedInterest, 10, 'compounded')
 })
 
 test('compounds every cutoff period with no partial cycle', () => {
   const result = calculateCompoundInterest({
     principal: 10000,
-    monthlyInterest: 2,
+    yearlyInterest: 24,
     daysPassed: 60,
     cutoffDays: 15,
   })
@@ -65,7 +65,7 @@ test('compounds every cutoff period with no partial cycle', () => {
 test('adds pro-rata interest for the days after the last cutoff', () => {
   const result = calculateCompoundInterest({
     principal: 10000,
-    monthlyInterest: 2,
+    yearlyInterest: 24,
     daysPassed: 20,
     cutoffDays: 15,
   })
@@ -74,7 +74,7 @@ test('adds pro-rata interest for the days after the last cutoff', () => {
   assert.equal(result.daysSinceLastCycle, 5)
   assert.equal(result.daysToNextCycle, 10)
   close(result.compoundedInterest, 100, 'compounded')
-  close(result.pendingInterest, 10100 * (0.02 / 30) * 5, 'pending')
+  close(result.pendingInterest, 10100 * (0.24 / 360) * 5, 'pending')
   close(result.balance, 10133.6666667, 'balance')
   close(result.interest, result.balance - 10000, 'interest')
 })
@@ -82,7 +82,7 @@ test('adds pro-rata interest for the days after the last cutoff', () => {
 test('returns the principal when no days have passed', () => {
   const result = calculateCompoundInterest({
     principal: 500,
-    monthlyInterest: 5,
+    yearlyInterest: 60,
     daysPassed: 0,
     cutoffDays: 15,
   })
@@ -96,7 +96,7 @@ test('returns the principal when no days have passed', () => {
 test('supports fractional days', () => {
   const result = calculateCompoundInterest({
     principal: 1000,
-    monthlyInterest: 3,
+    yearlyInterest: 36,
     daysPassed: 10.5,
     cutoffDays: 15,
   })
@@ -114,13 +114,13 @@ test('converts time units into days', () => {
   // 2 months entered as a value equals 60 days entered directly.
   const inMonths = calculateCompoundInterest({
     principal: 10000,
-    monthlyInterest: 2,
+    yearlyInterest: 24,
     daysPassed: toDays(2, 'months'),
     cutoffDays: 15,
   })
   const inDays = calculateCompoundInterest({
     principal: 10000,
-    monthlyInterest: 2,
+    yearlyInterest: 24,
     daysPassed: 60,
     cutoffDays: 15,
   })
@@ -131,7 +131,7 @@ test('converts time units into days', () => {
 test('rejects invalid input', () => {
   const valid = {
     principal: 1,
-    monthlyInterest: 1,
+    yearlyInterest: 1,
     daysPassed: 1,
     cutoffDays: 15,
   }
@@ -145,11 +145,11 @@ test('rejects invalid input', () => {
     RangeError,
   )
   assert.throws(
-    () => calculateCompoundInterest({ ...valid, monthlyInterest: -1 }),
+    () => calculateCompoundInterest({ ...valid, yearlyInterest: -1 }),
     RangeError,
   )
   assert.throws(
-    () => calculateCompoundInterest({ ...valid, monthlyInterest: Number.NaN }),
+    () => calculateCompoundInterest({ ...valid, yearlyInterest: Number.NaN }),
     RangeError,
   )
 })

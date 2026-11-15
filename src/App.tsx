@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  DAYS_PER_MONTH,
   calculateCompoundInterest,
   type CompoundInterestResult,
 } from '@/lib/compound-interest'
@@ -22,14 +23,14 @@ const DEFAULT_CUTOFF_DAYS = '15'
 
 interface FormValues {
   principal: string
-  dailyInterest: string
+  monthlyInterest: string
   daysPassed: string
   cutoffDays: string
 }
 
 const INITIAL_VALUES: FormValues = {
   principal: '',
-  dailyInterest: '',
+  monthlyInterest: '',
   daysPassed: '',
   cutoffDays: DEFAULT_CUTOFF_DAYS,
 }
@@ -57,26 +58,26 @@ function calculateFromValues(
   values: FormValues,
 ): CompoundInterestResult | null {
   const principal = parseNumber(values.principal)
-  const dailyInterest = parseNumber(values.dailyInterest)
+  const monthlyInterest = parseNumber(values.monthlyInterest)
   const daysPassed = parseNumber(values.daysPassed)
   const cutoffDays = parseNumber(values.cutoffDays)
 
   if (
     principal === null ||
-    dailyInterest === null ||
+    monthlyInterest === null ||
     daysPassed === null ||
     cutoffDays === null
   ) {
     return null
   }
 
-  if (principal < 0 || dailyInterest < 0 || daysPassed < 0 || cutoffDays < 1) {
+  if (principal < 0 || monthlyInterest < 0 || daysPassed < 0 || cutoffDays < 1) {
     return null
   }
 
   return calculateCompoundInterest({
     principal,
-    dailyInterest,
+    monthlyInterest,
     daysPassed,
     cutoffDays,
   })
@@ -154,14 +155,14 @@ function App() {
               className="size-3.5 text-emerald-400"
               aria-hidden="true"
             />
-            Daily accrual, periodic compounding
+            Monthly rate, periodic compounding
           </div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight">
             Compound interest calculator
           </h1>
           <p className="text-sm text-muted-foreground">
-            Interest accrues every day and is capitalized into the balance at
-            each cutoff.
+            The monthly rate accrues daily and is capitalized into the balance
+            at each cutoff.
           </p>
         </header>
 
@@ -196,22 +197,22 @@ function App() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dailyInterest">Daily interest (%)</Label>
+                <Label htmlFor="monthlyInterest">Monthly interest (%)</Label>
                 <Input
-                  id="dailyInterest"
-                  name="dailyInterest"
+                  id="monthlyInterest"
+                  name="monthlyInterest"
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.0001"
+                  step="0.01"
                   required
-                  placeholder="0.1"
-                  value={values.dailyInterest}
-                  onChange={handleChange('dailyInterest')}
+                  placeholder="2"
+                  value={values.monthlyInterest}
+                  onChange={handleChange('monthlyInterest')}
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground">
-                  0.1 means 0.1% of the balance per day.
+                  {`2 means 2% per month, accrued daily (month ÷ ${DAYS_PER_MONTH}).`}
                 </p>
               </div>
 

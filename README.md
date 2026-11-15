@@ -43,6 +43,10 @@ React or DOM dependency. Form state and handlers live in `src/App.tsx`.
 - Time passed can be entered in days, months or years using the button group
   under the field; switching units converts the typed value (60 days → 2
   months) and the hint below shows the exact number of days used.
+- The results card shows accrued interest (`balance - principal`) and the final
+  balance (`principal + interest`) as equal headline figures, followed by the
+  multiplier (`balance / principal`, rounded to 2 decimals), the compounded and
+  pending interest and the days until the next compounding.
 - `current_balance` shows the calculated balance and is editable, but editing it
   does not trigger recalculation. `Calculate` restores the derived value.
 - `Reset` returns the form to its defaults.

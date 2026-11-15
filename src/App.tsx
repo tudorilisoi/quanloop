@@ -70,6 +70,11 @@ const numberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 })
 
+const multiplierFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 function parseNumber(value: string): number | null {
   const trimmed = value.trim()
   if (trimmed === '') {
@@ -220,6 +225,9 @@ function App() {
   const calculatedBalance = result
     ? currencyFormatter.format(result.balance)
     : ''
+  // Growth factor of the projection: final balance divided by the principal.
+  const multiplier =
+    result && result.principal > 0 ? result.balance / result.principal : null
   const balanceInput =
     balanceEdit && balanceEdit.values === values
       ? balanceEdit.text
@@ -431,10 +439,26 @@ function App() {
           <section aria-live="polite">
             <Card>
               <CardHeader>
-                <CardDescription>Accrued compound interest</CardDescription>
-                <CardTitle className="text-3xl tabular-nums text-emerald-400">
-                  {result ? currencyFormatter.format(result.interest) : '—'}
-                </CardTitle>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="space-y-1">
+                    <CardDescription>Accrued compound interest</CardDescription>
+                    <CardTitle className="text-3xl tabular-nums text-emerald-400">
+                      {result ? currencyFormatter.format(result.interest) : '—'}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Balance − principal
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <CardDescription>Balance</CardDescription>
+                    <CardTitle className="text-3xl tabular-nums text-emerald-400">
+                      {result ? currencyFormatter.format(result.balance) : '—'}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Principal + interest
+                    </p>
+                  </div>
+                </div>
                 <CardDescription>
                   {result
                     ? `${numberFormatter.format(result.cycles)} full ${
@@ -449,11 +473,13 @@ function App() {
               <CardContent>
                 <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <Stat
-                    label="Balance"
+                    label="Multiplier"
                     value={
-                      result ? currencyFormatter.format(result.balance) : '—'
+                      multiplier === null
+                        ? '—'
+                        : `×${multiplierFormatter.format(multiplier)}`
                     }
-                    hint="Including pending interest"
+                    hint="Balance ÷ principal"
                   />
                   <Stat
                     label="Compounded interest"

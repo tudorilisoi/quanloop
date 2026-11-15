@@ -45,5 +45,7 @@ React or DOM dependency. Form state and handlers live in `src/App.tsx`.
 - `current_balance` shows the calculated balance and is editable, but editing it
   does not trigger recalculation. `Calculate` restores the derived value.
 - `Reset` returns the form to its defaults.
+- From the `lg` breakpoint up the results card sits to the right of the form
+  (two-column grid, stats stacked); below that it stacks underneath.
 - Numeric inputs use native HTML validation (`type="number"`, `min`, `step`,
   `required`), so invalid values block submission before React handles the form.

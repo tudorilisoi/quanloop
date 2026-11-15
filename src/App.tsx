@@ -233,7 +233,7 @@ function App() {
         <div className="absolute -bottom-56 left-1/4 h-80 w-[32rem] rounded-full bg-sky-500/10 blur-3xl" />
       </div>
 
-      <main className="relative mx-auto w-full max-w-xl">
+      <main className="relative mx-auto w-full max-w-xl lg:max-w-5xl">
         <header className="mb-8 space-y-2 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
             <TrendingUp
@@ -251,198 +251,200 @@ function App() {
           </p>
         </header>
 
-        <Card>
-          <form onSubmit={handleSubmit}>
-            <CardHeader className="border-b border-border">
-              <CardTitle>Investment inputs</CardTitle>
-              <CardDescription>
-                All values are numbers. Results update as you type.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="grid gap-4 pt-(--card-spacing) sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="principal">Principal</Label>
-                <Input
-                  id="principal"
-                  name="principal"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="10000"
-                  value={values.principal}
-                  onChange={handleChange('principal')}
-                  className="h-9"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Amount initially invested.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="monthlyInterest">Monthly interest (%)</Label>
-                <Input
-                  id="monthlyInterest"
-                  name="monthlyInterest"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="2"
-                  value={values.monthlyInterest}
-                  onChange={handleChange('monthlyInterest')}
-                  className="h-9"
-                />
-                <p className="text-xs text-muted-foreground">
-                  2 means 2% per month, accrued daily.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="daysPassed">Time passed</Label>
-                <Input
-                  id="daysPassed"
-                  name="daysPassed"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  required
-                  placeholder={DAYS_PLACEHOLDER[timeUnit]}
-                  value={values.daysPassed}
-                  onChange={handleChange('daysPassed')}
-                  className="h-9"
-                />
-                <UnitSelector value={timeUnit} onChange={handleUnitChange} />
-                <p className="text-xs text-muted-foreground">
-                  {daysPreview === null
-                    ? `1 month = ${DAYS_PER_MONTH} days · 1 year = ${DAYS_PER_YEAR} days.`
-                    : `= ${numberFormatter.format(daysPreview)} ${
-                        daysPreview === 1 ? 'day' : 'days'
-                      } · 1 month = ${DAYS_PER_MONTH} days.`}
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="cutoffDays">Cutoff (days)</Label>
-                <Input
-                  id="cutoffDays"
-                  name="cutoffDays"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="1"
-                  required
-                  value={values.cutoffDays}
-                  onChange={handleChange('cutoffDays')}
-                  className="h-9"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Interest compounds after this many days.
-                </p>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="currentBalance">Current balance</Label>
-                <Input
-                  id="currentBalance"
-                  name="currentBalance"
-                  type="text"
-                  inputMode="decimal"
-                  value={balanceInput}
-                  onChange={(event) =>
-                    setBalanceEdit({ values, text: event.target.value })
-                  }
-                  className="h-9 font-medium tabular-nums"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Calculated from the inputs above. Editing it does not trigger
-                  a recalculation.
-                </p>
-              </div>
-            </CardContent>
-
-            <CardFooter className="justify-end gap-3 bg-transparent">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleReset}
-                className="h-9 px-3.5"
-              >
-                <RotateCcw data-icon="inline-start" aria-hidden="true" />
-                Reset
-              </Button>
-              <Button type="submit" className="h-9 px-3.5">
-                <Calculator data-icon="inline-start" aria-hidden="true" />
-                Calculate
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-
-        <section className="mt-6" aria-live="polite">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           <Card>
-            <CardHeader>
-              <CardDescription>Accrued compound interest</CardDescription>
-              <CardTitle className="text-3xl tabular-nums text-emerald-400">
-                {result ? currencyFormatter.format(result.interest) : '—'}
-              </CardTitle>
-              <CardDescription>
-                {result
-                  ? `${numberFormatter.format(result.cycles)} full ${
-                      result.cycles === 1 ? 'cycle' : 'cycles'
-                    } of ${numberFormatter.format(result.cutoffDays)} ${
-                      result.cutoffDays === 1 ? 'day' : 'days'
-                    }`
-                  : 'Fill in every input to see the projection.'}
-              </CardDescription>
-            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardHeader className="border-b border-border">
+                <CardTitle>Investment inputs</CardTitle>
+                <CardDescription>
+                  All values are numbers. Results update as you type.
+                </CardDescription>
+              </CardHeader>
 
-            <CardContent>
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <Stat
-                  label="Balance"
-                  value={
-                    result ? currencyFormatter.format(result.balance) : '—'
-                  }
-                  hint="Including pending interest"
-                />
-                <Stat
-                  label="Compounded interest"
-                  value={
-                    result
-                      ? currencyFormatter.format(result.compoundedInterest)
-                      : '—'
-                  }
-                  hint="Already capitalized"
-                />
-                <Stat
-                  label="Pending interest"
-                  value={
-                    result
-                      ? currencyFormatter.format(result.pendingInterest)
-                      : '—'
-                  }
-                  hint="Not compounded yet"
-                />
-                <Stat
-                  label="Next compounding"
-                  value={
-                    result
-                      ? `${numberFormatter.format(result.daysToNextCycle)} ${
-                          result.daysToNextCycle === 1 ? 'day' : 'days'
-                        }`
-                      : '—'
-                  }
-                  hint="Until the next cutoff"
-                />
-              </dl>
-            </CardContent>
+              <CardContent className="grid gap-4 pt-(--card-spacing) sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="principal">Principal</Label>
+                  <Input
+                    id="principal"
+                    name="principal"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="10000"
+                    value={values.principal}
+                    onChange={handleChange('principal')}
+                    className="h-9"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Amount initially invested.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="monthlyInterest">Monthly interest (%)</Label>
+                  <Input
+                    id="monthlyInterest"
+                    name="monthlyInterest"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="2"
+                    value={values.monthlyInterest}
+                    onChange={handleChange('monthlyInterest')}
+                    className="h-9"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    2 means 2% per month, accrued daily.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="daysPassed">Time passed</Label>
+                  <Input
+                    id="daysPassed"
+                    name="daysPassed"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    required
+                    placeholder={DAYS_PLACEHOLDER[timeUnit]}
+                    value={values.daysPassed}
+                    onChange={handleChange('daysPassed')}
+                    className="h-9"
+                  />
+                  <UnitSelector value={timeUnit} onChange={handleUnitChange} />
+                  <p className="text-xs text-muted-foreground">
+                    {daysPreview === null
+                      ? `1 month = ${DAYS_PER_MONTH} days · 1 year = ${DAYS_PER_YEAR} days.`
+                      : `= ${numberFormatter.format(daysPreview)} ${
+                          daysPreview === 1 ? 'day' : 'days'
+                        } · 1 month = ${DAYS_PER_MONTH} days.`}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="cutoffDays">Cutoff (days)</Label>
+                  <Input
+                    id="cutoffDays"
+                    name="cutoffDays"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    required
+                    value={values.cutoffDays}
+                    onChange={handleChange('cutoffDays')}
+                    className="h-9"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Interest compounds after this many days.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="currentBalance">Current balance</Label>
+                  <Input
+                    id="currentBalance"
+                    name="currentBalance"
+                    type="text"
+                    inputMode="decimal"
+                    value={balanceInput}
+                    onChange={(event) =>
+                      setBalanceEdit({ values, text: event.target.value })
+                    }
+                    className="h-9 font-medium tabular-nums"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from the inputs above. Editing it does not trigger
+                    a recalculation.
+                  </p>
+                </div>
+              </CardContent>
+
+              <CardFooter className="justify-end gap-3 bg-transparent">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReset}
+                  className="h-9 px-3.5"
+                >
+                  <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                  Reset
+                </Button>
+                <Button type="submit" className="h-9 px-3.5">
+                  <Calculator data-icon="inline-start" aria-hidden="true" />
+                  Calculate
+                </Button>
+              </CardFooter>
+            </form>
           </Card>
-        </section>
+
+          <section aria-live="polite">
+            <Card>
+              <CardHeader>
+                <CardDescription>Accrued compound interest</CardDescription>
+                <CardTitle className="text-3xl tabular-nums text-emerald-400">
+                  {result ? currencyFormatter.format(result.interest) : '—'}
+                </CardTitle>
+                <CardDescription>
+                  {result
+                    ? `${numberFormatter.format(result.cycles)} full ${
+                        result.cycles === 1 ? 'cycle' : 'cycles'
+                      } of ${numberFormatter.format(result.cutoffDays)} ${
+                        result.cutoffDays === 1 ? 'day' : 'days'
+                      }`
+                    : 'Fill in every input to see the projection.'}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <Stat
+                    label="Balance"
+                    value={
+                      result ? currencyFormatter.format(result.balance) : '—'
+                    }
+                    hint="Including pending interest"
+                  />
+                  <Stat
+                    label="Compounded interest"
+                    value={
+                      result
+                        ? currencyFormatter.format(result.compoundedInterest)
+                        : '—'
+                    }
+                    hint="Already capitalized"
+                  />
+                  <Stat
+                    label="Pending interest"
+                    value={
+                      result
+                        ? currencyFormatter.format(result.pendingInterest)
+                        : '—'
+                    }
+                    hint="Not compounded yet"
+                  />
+                  <Stat
+                    label="Next compounding"
+                    value={
+                      result
+                        ? `${numberFormatter.format(result.daysToNextCycle)} ${
+                            result.daysToNextCycle === 1 ? 'day' : 'days'
+                          }`
+                        : '—'
+                    }
+                    hint="Until the next cutoff"
+                  />
+                </dl>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
       </main>
     </div>
   )

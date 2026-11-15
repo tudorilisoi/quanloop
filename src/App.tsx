@@ -342,7 +342,7 @@ function App() {
                     className="h-9"
                   />
                   <p className="text-xs text-muted-foreground">
-                    24 means 24% per year, accrued daily over a 360-day year.
+                    24 means 24% per year, accrued daily.
                   </p>
                 </div>
 

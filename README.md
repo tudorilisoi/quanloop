@@ -16,7 +16,8 @@ npm test
 The interest rate is **monthly** (percent per month). It accrues every day at a
 pro-rata rate and is capitalized into the balance every `cutoff_days` days. A
 month is counted as 30 days (`DAYS_PER_MONTH`), so a 15-day cutoff compounds
-half of the monthly rate.
+half of the monthly rate. Elapsed time can be entered in days, months or years
+and is converted to days first (`toDays`, 1 year = 12 × 30 days).
 
 ```
 monthly_rate  = monthly_interest / 100
@@ -36,8 +37,11 @@ React or DOM dependency. Form state and handlers live in `src/App.tsx`.
 
 ## Behavior
 
-- The balance recalculates on every change of principal, monthly interest, days
+- The balance recalculates on every change of principal, monthly interest, time
   passed or cutoff (cutoff defaults to 15).
+- Time passed can be entered in days, months or years using the button group
+  under the field; switching units converts the typed value (60 days → 2
+  months) and the hint below shows the exact number of days used.
 - `current_balance` shows the calculated balance and is editable, but editing it
   does not trigger recalculation. `Calculate` restores the derived value.
 - `Reset` returns the form to its defaults.

@@ -3,7 +3,10 @@ import { test } from 'node:test'
 
 import {
   DAYS_PER_MONTH,
+  DAYS_PER_UNIT,
+  DAYS_PER_YEAR,
   calculateCompoundInterest,
+  toDays,
 } from '../src/lib/compound-interest.ts'
 
 const close = (actual, expected, message) =>
@@ -14,6 +17,8 @@ const close = (actual, expected, message) =>
 
 test('uses a 30-day month convention', () => {
   assert.equal(DAYS_PER_MONTH, 30)
+  assert.equal(DAYS_PER_YEAR, 360)
+  assert.deepEqual(DAYS_PER_UNIT, { days: 1, months: 30, years: 360 })
 
   const result = calculateCompoundInterest({
     principal: 1000,
@@ -98,6 +103,29 @@ test('supports fractional days', () => {
 
   assert.equal(result.cycles, 0)
   close(result.balance, 1000 + 1000 * 0.001 * 10.5, 'balance')
+})
+
+test('converts time units into days', () => {
+  assert.equal(toDays(60, 'days'), 60)
+  assert.equal(toDays(2, 'months'), 60)
+  assert.equal(toDays(1, 'years'), 360)
+  assert.equal(toDays(1.5, 'months'), 45)
+
+  // 2 months entered as a value equals 60 days entered directly.
+  const inMonths = calculateCompoundInterest({
+    principal: 10000,
+    monthlyInterest: 2,
+    daysPassed: toDays(2, 'months'),
+    cutoffDays: 15,
+  })
+  const inDays = calculateCompoundInterest({
+    principal: 10000,
+    monthlyInterest: 2,
+    daysPassed: 60,
+    cutoffDays: 15,
+  })
+
+  assert.deepEqual(inMonths, inDays)
 })
 
 test('rejects invalid input', () => {

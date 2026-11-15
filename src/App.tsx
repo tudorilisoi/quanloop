@@ -15,11 +15,32 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   DAYS_PER_MONTH,
+  DAYS_PER_UNIT,
+  DAYS_PER_YEAR,
   calculateCompoundInterest,
+  toDays,
   type CompoundInterestResult,
+  type TimeUnit,
 } from '@/lib/compound-interest'
 
 const DEFAULT_CUTOFF_DAYS = '15'
+
+const TIME_UNIT_OPTIONS: { value: TimeUnit; label: string }[] = [
+  { value: 'days', label: 'Days' },
+  { value: 'months', label: 'Months' },
+  { value: 'years', label: 'Years' },
+]
+
+const DAYS_PLACEHOLDER: Record<TimeUnit, string> = {
+  days: '60',
+  months: '2',
+  years: '1',
+}
+
+/** Trims float noise so unit conversions stay readable in the input. */
+function formatUnitValue(value: number): string {
+  return String(Math.round(value * 100) / 100)
+}
 
 interface FormValues {
   principal: string
@@ -56,29 +77,30 @@ function parseNumber(value: string): number | null {
 
 function calculateFromValues(
   values: FormValues,
+  unit: TimeUnit,
 ): CompoundInterestResult | null {
   const principal = parseNumber(values.principal)
   const monthlyInterest = parseNumber(values.monthlyInterest)
-  const daysPassed = parseNumber(values.daysPassed)
+  const timePassed = parseNumber(values.daysPassed)
   const cutoffDays = parseNumber(values.cutoffDays)
 
   if (
     principal === null ||
     monthlyInterest === null ||
-    daysPassed === null ||
+    timePassed === null ||
     cutoffDays === null
   ) {
     return null
   }
 
-  if (principal < 0 || monthlyInterest < 0 || daysPassed < 0 || cutoffDays < 1) {
+  if (principal < 0 || monthlyInterest < 0 || timePassed < 0 || cutoffDays < 1) {
     return null
   }
 
   return calculateCompoundInterest({
     principal,
     monthlyInterest,
-    daysPassed,
+    daysPassed: toDays(timePassed, unit),
     cutoffDays,
   })
 }
@@ -103,8 +125,41 @@ function Stat({ label, value, hint }: StatProps) {
   )
 }
 
+interface UnitSelectorProps {
+  value: TimeUnit
+  onChange: (unit: TimeUnit) => void
+}
+
+function UnitSelector({ value, onChange }: UnitSelectorProps) {
+  return (
+    <div
+      role="group"
+      aria-label="Time unit"
+      className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/30 p-1"
+    >
+      {TIME_UNIT_OPTIONS.map((option) => {
+        const active = option.value === value
+        return (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={active ? 'secondary' : 'ghost'}
+            aria-pressed={active}
+            onClick={() => onChange(option.value)}
+            className="h-7 text-xs font-medium"
+          >
+            {option.label}
+          </Button>
+        )
+      })}
+    </div>
+  )
+}
+
 function App() {
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES)
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>('days')
   // Manual edit of the derived balance input. It is only valid for the exact
   // set of values it was typed against, so any recalculation discards it.
   const [balanceEdit, setBalanceEdit] = useState<{
@@ -114,7 +169,10 @@ function App() {
 
   // Recalculates whenever a form input changes. `balanceEdit` is not a
   // dependency: editing the balance never triggers a recalculation.
-  const result = useMemo(() => calculateFromValues(values), [values])
+  const result = useMemo(
+    () => calculateFromValues(values, timeUnit),
+    [values, timeUnit],
+  )
   const calculatedBalance = result
     ? currencyFormatter.format(result.balance)
     : ''
@@ -130,6 +188,29 @@ function App() {
     }
   }
 
+  // Switching the unit converts the typed time so the duration stays the same
+  // (60 days -> 2 months). Values that do not convert cleanly are rounded to
+  // two decimals; the input hint always shows the exact day equivalent.
+  function handleUnitChange(nextUnit: TimeUnit) {
+    if (nextUnit === timeUnit) {
+      return
+    }
+
+    setValues((current) => {
+      const parsed = parseNumber(current.daysPassed)
+      if (parsed === null) {
+        return current
+      }
+
+      const days = toDays(parsed, timeUnit)
+      return {
+        ...current,
+        daysPassed: formatUnitValue(days / DAYS_PER_UNIT[nextUnit]),
+      }
+    })
+    setTimeUnit(nextUnit)
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     // Native HTML validation blocks submit while any input is invalid.
     event.preventDefault()
@@ -138,8 +219,12 @@ function App() {
 
   function handleReset() {
     setValues(INITIAL_VALUES)
+    setTimeUnit('days')
     setBalanceEdit(null)
   }
+
+  const timePassed = parseNumber(values.daysPassed)
+  const daysPreview = timePassed === null ? null : toDays(timePassed, timeUnit)
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-background px-4 py-10 text-foreground sm:px-6">
@@ -212,27 +297,32 @@ function App() {
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {`2 means 2% per month, accrued daily (month ÷ ${DAYS_PER_MONTH}).`}
+                  2 means 2% per month, accrued daily.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="daysPassed">Days passed</Label>
+                <Label htmlFor="daysPassed">Time passed</Label>
                 <Input
                   id="daysPassed"
                   name="daysPassed"
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   min="0"
-                  step="1"
+                  step="any"
                   required
-                  placeholder="60"
+                  placeholder={DAYS_PLACEHOLDER[timeUnit]}
                   value={values.daysPassed}
                   onChange={handleChange('daysPassed')}
                   className="h-9"
                 />
+                <UnitSelector value={timeUnit} onChange={handleUnitChange} />
                 <p className="text-xs text-muted-foreground">
-                  Days since the investment started.
+                  {daysPreview === null
+                    ? `1 month = ${DAYS_PER_MONTH} days · 1 year = ${DAYS_PER_YEAR} days.`
+                    : `= ${numberFormatter.format(daysPreview)} ${
+                        daysPreview === 1 ? 'day' : 'days'
+                      } · 1 month = ${DAYS_PER_MONTH} days.`}
                 </p>
               </div>
 

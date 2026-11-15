@@ -1,6 +1,24 @@
 /** Day count convention: one month is treated as 30 days. */
 export const DAYS_PER_MONTH = 30
 
+/** Day count convention: one year is treated as twelve 30-day months. */
+export const DAYS_PER_YEAR = DAYS_PER_MONTH * 12
+
+/** Units the user can enter the elapsed time in. */
+export type TimeUnit = 'days' | 'months' | 'years'
+
+/** Number of days in one unit of {@link TimeUnit}. */
+export const DAYS_PER_UNIT: Readonly<Record<TimeUnit, number>> = {
+  days: 1,
+  months: DAYS_PER_MONTH,
+  years: DAYS_PER_YEAR,
+}
+
+/** Converts an amount of time expressed in `unit` into days. */
+export function toDays(value: number, unit: TimeUnit): number {
+  return value * DAYS_PER_UNIT[unit]
+}
+
 export interface CompoundInterestInput {
   principal: number
   /** Monthly interest rate, in percent (for example 2 means 2% per month). */
